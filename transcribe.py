@@ -100,6 +100,28 @@ def check_new_episodes(podcast_rss):
     # Return the URL and title of the latest episode
     return latest_episode_url, latest_episode_title
 
+# code to check for new episodes of podcast on apple podcasts, such as Kvalitetsaktiepodden
+def check_all_episodes(podcast_rss):
+    """
+    Check for new episodes of a podcast
+    # Find rss from "https://castos.com/tools/find-podcast-rss-feed/"
+
+    Args:
+        podcast_rss (str): The RSS feed of the podcast
+                           Example: "https://feeds.acast.com/public/shows/60c356060f75f600192eac7f"
+
+    Returns:
+        latest_episode_url (str): The URL of the latest episode
+        latest_episode_title (str): The title of the latest episode
+    """
+    # Parse the RSS feed
+    feed = feedparser.parse(podcast_rss)
+
+    # Get the list of episodes
+    episodes = feed.entries
+
+    # Get the URL and title of the latest episode
+    return episodes
 
 def download_episode(db, episode_url, episode_title, file_name="latest_episode.mp3"):
     # Check if the episode is already downloaded
@@ -169,3 +191,19 @@ download_episode(db, latest_episode_url, latest_episode_title, file_name=mp3_fil
 # Transcribe the episode
 transcription_file_path = output_folder / "kvalitetsaktiepodden"
 transcribe_episode(db, latest_episode_title, file_name=mp3_file_path, output_folder=output_folder)
+
+
+# Trascribe all episodes
+episodes = check_all_episodes(podcast_rss)
+for episode in episodes:
+    latest_episode_url = episode.enclosures[0].href
+    latest_episode_title = episode.title
+    
+    print(f"Downloading episode: {episode.title}")
+    mp3_file_path = output_folder / (latest_episode_title + ".mp3")
+    download_episode(db, latest_episode_url, latest_episode_title, file_name=mp3_file_path)
+
+    # Transcribe the episode
+    transcribe_episode(db, latest_episode_title, file_name=mp3_file_path, output_folder=output_folder)
+
+
