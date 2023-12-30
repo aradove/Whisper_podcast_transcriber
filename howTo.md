@@ -32,3 +32,6 @@ pip install setuptools-rust
 pip install git+https://github.com/openai/whisper.git 
 
 whisper avsnitt\ 476v2.mp3 --language Swedish
+
+# model
+https://huggingface.co/bjelkenhed/whisper-large-sv
