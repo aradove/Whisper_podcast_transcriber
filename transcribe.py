@@ -17,7 +17,7 @@ class PodcastsDB:
         self.downloaded_episodes = self.load_downloaded_episodes()
 
     def load_downloaded_episodes(self):
-        """Load the downloaded episodes from the JSON file"""
+        """Load the downloaded episodes and potentially transcribed from the JSON file"""
         try:
             with open(self.db_file, 'r') as file:
                 return json.load(file)
@@ -142,7 +142,7 @@ def download_episode(db, episode_url, episode_title, file_name="latest_episode.m
     # Add the episode to the downloaded episodes
     db.add_downloaded_episode(episode_title)
 
-def transcribe_episode(db, episode_title, file_name="latest_episode.mp3", output_folder="transcripts"):
+def transcribe_episode(db, episode_title, file_name="latest_episode.mp3",output_path=Path("transcripts/latest_episode.txt")):
     # Check if the episode is already transcribed
     if db.is_episode_transcribed(episode_title):
         print(f"Episode '{episode_title}' is already transcribed")
@@ -151,23 +151,15 @@ def transcribe_episode(db, episode_title, file_name="latest_episode.mp3", output
     print("Loading whisper model")
     model = whisper.load_model("large-v3", device="cuda")
     print("Starting transcription...")
-    result = model.transcribe(str(file_name), language="sv", verbose=False)
+    result = model.transcribe(str(Path(file_name)), language="sv", verbose=False)
 
-    # Create a new file name for the transcript
-    transcript_file_name = episode_title + '.txt'
-
-    # Write the transcribed text to a file
-    output_folder_path = Path(output_folder)
-    output_folder_path.mkdir(exist_ok=True)
-
-    output_path = Path(output_folder) / transcript_file_name
-    # file write with encoding utf-8
+    print("Writing transcription to file")
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, 'w', encoding="utf-8") as file:
         file.write(result["text"].replace(". ", ".\n"))
 
     print(f"Transcription saved to {output_path}")
-
-    # Mark the episode as transcribed
     db.mark_episode_as_transcribed(episode_title)
 
 
@@ -199,8 +191,8 @@ mp3_file_path = output_folder / (sanitize_filename(latest_episode_title) + ".mp3
 download_episode(db, latest_episode_url, latest_episode_title, file_name=mp3_file_path)
 
 # Transcribe the episode
-transcription_file_path = output_folder / "kvalitetsaktiepodden"
-transcribe_episode(db, latest_episode_title, file_name=mp3_file_path, output_folder=output_folder)
+transcription_file_path = output_folder / "kvalitetsaktiepodden" / (sanitize_filename(latest_episode_title) + ".txt")
+transcribe_episode(db, latest_episode_title, file_name=mp3_file_path, output_path=transcription_file_path)
 
 
 # Trascribe all episodes
@@ -214,6 +206,7 @@ for episode in episodes:
     download_episode(db, latest_episode_url, latest_episode_title, file_name=mp3_file_path)
 
     # Transcribe the episode
-    transcribe_episode(db, latest_episode_title, file_name=mp3_file_path, output_folder=output_folder)
+    transcription_file_path = output_folder / "kvalitetsaktiepodden" / (sanitize_filename(latest_episode_title) + ".txt")
+    transcribe_episode(db, latest_episode_title, file_name=mp3_file_path, output_path=transcription_file_path)
 
 
