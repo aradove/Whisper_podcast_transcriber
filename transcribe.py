@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 import shutil
 import torch
+import re
 
 class PodcastsDB:
     """ 
@@ -170,6 +171,15 @@ def transcribe_episode(db, episode_title, file_name="latest_episode.mp3", output
     db.mark_episode_as_transcribed(episode_title)
 
 
+def sanitize_filename(filename):
+    # Remove invalid characters
+    filename = re.sub(r'[\\/*?:"<>|]', "", filename)
+    
+    # Remove leading/trailing whitespace
+    filename = filename.strip()
+    
+    return filename
+
 # Replace with the RSS feed which you can find at "https://castos.com/tools/find-podcast-rss-feed/"
 podcast_rss = "https://feeds.acast.com/public/shows/60c356060f75f600192eac7f"
 file_name = "Kvalitetsaktiepodden.mp3"
@@ -185,7 +195,7 @@ db = PodcastsDB(database_path)
 
 # Download the episode
 output_folder = Path(__file__).parent / "transcripts" / "kvalitetsaktiepodden"
-mp3_file_path = output_folder / (latest_episode_title + ".mp3")
+mp3_file_path = output_folder / (sanitize_filename(latest_episode_title) + ".mp3")
 download_episode(db, latest_episode_url, latest_episode_title, file_name=mp3_file_path)
 
 # Transcribe the episode
@@ -200,7 +210,7 @@ for episode in episodes:
     latest_episode_title = episode.title
     
     print(f"Downloading episode: {episode.title}")
-    mp3_file_path = output_folder / (latest_episode_title + ".mp3")
+    mp3_file_path = output_folder / (sanitize_filename(latest_episode_title) + ".mp3")
     download_episode(db, latest_episode_url, latest_episode_title, file_name=mp3_file_path)
 
     # Transcribe the episode
